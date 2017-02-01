@@ -442,6 +442,8 @@ def installed() {
 
     runEvery15Minutes(initialize)
     initialize()
+    
+    sendCurrentValues()
 }
 
 def updated() {
@@ -451,6 +453,8 @@ def updated() {
     unsubscribe()
     // Subscribe to stuff
     initialize()
+    
+    sendCurrentValues()
 }
 
 // Return list of displayNames
@@ -477,7 +481,35 @@ def initialize() {
     updateSubscription()
 }
 
-// Update the bridge"s subscription
+// Send the current values of all attributes of configured devices.
+// This makes sure we send the initial values before any events are fired.
+def sendCurrentValues() {
+	log.debug "Sending current values"
+	CAPABILITY_MAP.each { key, capability ->
+        capability["attributes"].each { attribute ->
+            settings[key].each {device ->
+            	def curVal = device.currentValue(attribute)
+        		if (curVal != null) {
+        			def json = new JsonOutput().toJson([
+                		path: "/push",
+                		body: [
+                    		name: device.displayName,
+                    		value: "$curVal",
+                    		type: attribute
+                		]
+    				])
+       	
+      		  		log.debug "Sending current value: ${json}"
+        			bridge.deviceNotification(json)
+        		} else {
+                	log.debug "null value for ${attribute}"
+                }
+            }
+        }
+    }
+}
+
+// Update the bridge's subscription
 def updateSubscription() {
     def attributes = [
         notify: ["Contacts", "System"]
