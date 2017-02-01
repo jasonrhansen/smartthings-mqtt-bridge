@@ -488,18 +488,17 @@ def sendCurrentValues() {
 	CAPABILITY_MAP.each { key, capability ->
         capability["attributes"].each { attribute ->
             settings[key].each {device ->
-            	def curVal = device.currentValue(attribute)
+            	def curVal = curVal = device.currentValue(attribute)
         		if (curVal != null) {
         			def json = new JsonOutput().toJson([
                 		path: "/push",
                 		body: [
                     		name: device.displayName,
-                    		value: "$curVal",
+                    		value: "${curVal}",
                     		type: attribute
                 		]
     				])
        	
-      		  		log.debug "Sending current value: ${json}"
         			bridge.deviceNotification(json)
         		} else {
                 	log.debug "null value for ${attribute}"
